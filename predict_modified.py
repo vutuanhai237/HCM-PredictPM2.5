@@ -9,10 +9,10 @@ n_hours = 24
 n_features = 1
 
 list_drop = ['Date (LT)','Year','Month','Day','Hour']
-dataset = pd.read_csv('./dataset/pm25.csv')
+dataset = pd.read_csv('./dataset/pm25modified.csv')
 datasets2021 = np.asarray([row for row in dataset.values if row[1] == 2021  and row[4] == 0]) 
+n_train = 43848
 xlabel = [str(row[3]) + '/' + str(row[2]) for row in datasets2021]
-n_train = 32133
 dataset = dataset.drop(list_drop, axis = 1)
 dataset = dataset.values
 dataset = dataset.astype('float32')
@@ -28,45 +28,41 @@ def create_model(n_hours):
 	model.compile(loss='mae', optimizer='adam')
 	return model
 
-# Train từ 2016 đến 2020 bao gồm 42844 point
-# Test trong 2021 bao gồm 14053 point
-# Tỉ lệ split 0.753
 is_train, is_save, is_test = False, False, True
-# train_x, train_y, val_x, val_y, test_x, test_y = load_dataset(n_hours, n_features)
-# print(train_x.shape)
+
 if is_train:
     model = create_model(n_hours)
     history = model.fit(train_x, train_y, epochs=30, batch_size=128, validation_data=(val_x, val_y), verbose=2, shuffle=False)
     save_train_history(
         history, 
-        path = './LSTM/analysis/train/'
+        path = './LSTMmodified/analysis/train/'
     )
 if is_save:
     save_model(
         model, 
-        path = './LSTM/model/'
+        path = './LSTMmodified/model/'
     )
 if is_test:
     yhat = load_model_and_predict(
         test_x, 
-        path = './LSTM/model/'
+        path = './LSTMmodified/model/'
     )
     yhat = yhat[1:]
     test_y = test_y[:-1]
-
+    print(yhat.shape)
     save_test_result(
         xlabel,
-        test_y[::24], 
-        yhat[::24],
-        low = 300,
-        high = 354,
-        path = './LSTM/analysis/test/'
+        test_y, 
+        yhat,
+        low = 100,
+        high = 200,
+        path = './LSTMmodified/analysis/test/'
     )
     # rmses, mapes, maes = calculate_metric(
     #     test_y, 
     #     yhat, 
-    #     path_save_txt = './LSTM/analysis/error_per_hour/',
-    #     path_save_plot = './LSTM/analysis/error_per_hour_plot/',
+    #     path_save_txt = './LSTMmodified/analysis/error_per_hour/',
+    #     path_save_plot = './LSTMmodified/analysis/error_per_hour_plot/',
     #     is_save = True, is_plot = False,
     #     type = 'per_hour'
     # )
@@ -74,14 +70,14 @@ if is_test:
     rmses, mapes, maes = calculate_metric(
         test_y, 
         yhat, 
-        path_save_txt = './LSTM/analysis/error_per_day/',
-        path_save_plot = './LSTM/analysis/error_per_day_plot/',
+        path_save_txt = './LSTMmodified/analysis/error_per_day/',
+        path_save_plot = './LSTMmodified/analysis/error_per_day_plot/',
         is_save = True, is_plot = False,
         type = 'per_day'
     )
 
     metrics = np.stack((test_y, np.squeeze(yhat)), axis=1)
-    np.savetxt('./LSTM/analysis/error/' + "pm25.csv", metrics, '%5.4f', delimiter=",", header='observed, predict')
+    np.savetxt('./LSTMmodified/analysis/error/' + "pm25.csv", metrics, '%5.4f', delimiter=",", header='observed, predict')
 
 
 #     print(np.mean(mapes))

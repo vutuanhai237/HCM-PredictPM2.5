@@ -135,16 +135,15 @@ def calculate_metric(y, yhat, path_save_txt: str = '', path_save_plot: str = '',
     plt.clf()
     return rmses, mapes, maes
 
-def split_dataset(dataset, n_hours: int, n_features: int):
+def split_dataset(dataset, n_train: int, n_hours: int, n_features: int):
     """Split dataset to train / val / test
     """
     # split into train/val/test: 6/2/2
   
     values = dataset.values
-    n_train = 32133
-    train = values[:32133, :]
-    val = values[32133:42844, :]
-    test = values[42844:, :]
+    train = values[:int(n_train*0.75), :]
+    val = values[int(n_train*0.75):n_train, :]
+    test = values[n_train:, :]
     # split into input and outputs
     train_x, train_y = train[:, :-1], train[:, -1]
     test_x, test_y = test[:, :-1], test[:, -1]
@@ -166,16 +165,17 @@ def save_train_history(history, path: str = ''):
     plt.savefig(path + 'pm25.png')
     plt.clf()
 
-def save_test_result(y, yhat, path: str = ''):
-    if y.shape[0] > 100:
-        length = 100
-    else:
-        length = y.shape[0]
-    plt.plot(yhat[:length], label='predict')
-    plt.plot(y[:length], label='observed')
-    plt.title('pm25')
+def save_test_result(x_label, y, yhat, low, high, path: str = ''):
+    plt.figure(figsize=(10,2))
+    days = x_label[low:high]
+    plt.plot(days, yhat[low:high], label='predict')
+    plt.plot(days, y[low:high], label='observed')
+    plt.title('pm2.5')
+    plt.xlabel('Days in 2021')
+    plt.ylabel('PM2.5 ($\mu / m^3$)')
+    plt.xticks(list(days)[0::30])
     plt.legend()
-    plt.savefig(path + 'pm25.png')
+    plt.savefig(path + 'pm25' + str(low) + '-' + str(high) + '.png', dpi = 1000)
     plt.clf()
 
 
